@@ -1,34 +1,31 @@
 //function.c//
 
 #include "functions.h"
-#include <stdint.h>
-#include <stdio.h>
-#define USART1_BASE (0x40011000)
-
-enum message{
-    USART_TX_ERROR,         //0 (no data provided)
-    USART_TX_BUSY,          //1 (the transmission is busy or timed out)
-    USART_TX_INCOMPLETE,    //2 (the trasmission is incomplite due to an early null-terminator)
-    USART_TX_COMPLETE,      //3 (the trasmission is complete)
-
-};
-
-typedef struct{
-    uint32_t data_reg;
-    uint32_t status_reg;
-
-} usart1_t;
-
-#define usart ((usart1_t *) USART1_BASE)
-
+#include <stddef.h>
 
 const uint32_t TIMEOUT = 10;
+
+void usart_init(void) {
+    usart->status_reg = 0x00; // Reset registro di stato
+    usart->data_reg = 0x00;   // Reset registro dati
+}
+
+uint32_t usart_is_tx_ready(void){
+
+    uint32_t mask = 0x80; // 10000000
+
+    if (usart->status_reg & mask){
+        return 1; //the buffer is ready
+    }
+
+    else{
+        return 0; //the buffer is not ready
+    }
+}
 
 uint32_t usart_tx_start(const uint8_t *data_bytes, uint32_t n_bytes){
 
     uint32_t timeout = TIMEOUT;
-
-    usart->data_reg = 'A';
 
     if (data_bytes == NULL){
         return USART_TX_ERROR;
@@ -57,18 +54,7 @@ uint32_t usart_tx_start(const uint8_t *data_bytes, uint32_t n_bytes){
 }
 
 
-uint32_t usart_is_tx_ready(void){
 
-    uint32_t mask = 0x80; // 10000000
-
-    if (usart->status_reg & mask){
-        return 1; //the buffer is ready
-    }
-
-    else{
-        return 0; //the buffer is not ready
-    }
-}
 
 void delay_routine_1(void){
     __asm(
